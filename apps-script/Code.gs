@@ -14,8 +14,13 @@ var MAP = {
 };
 
 function doGet() {
+  try { return build_(); } catch (err) { return out_({ ok: false, error: String(err && err.message || err) }); }
+}
+function build_() {
   var tz = Session.getScriptTimeZone();
-  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) return out_({ ok: false, error: 'Script is not bound to a spreadsheet (open it from Extensions > Apps Script inside the sheet)' });
+  var sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) return out_({ ok: false, error: 'Sheet not found: ' + SHEET_NAME });
   var vals = sh.getDataRange().getValues();
   var head = vals[0].map(String);

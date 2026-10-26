@@ -347,9 +347,9 @@ async function load() {
   if (api) {
     try {
       const j = await getJson(api), rows = asRows(j);
-      if (!rows) throw new Error('bad shape');
+      if (!rows) throw new Error(j && j.error ? j.error : 'الرد ليس JSON بالشكل المتوقع');
       dash._set('ok', rows); setConn('live', 'متصل بالشيت', fmtDT(new Date())); return;
-    } catch (e) { setConn('error', 'تعذّر الاتصال بالشيت — عرض الملف المحلي'); }
+    } catch (e) { setConn('error', 'تعذّر الاتصال بالشيت (' + (e && e.name === 'AbortError' ? 'انتهت المهلة' : (e && e.message) || 'خطأ') + ') — عرض الملف المحلي'); console.warn('Sheet API error:', e); }
   }
   try {
     const rows = asRows(await getJson(LOCAL_FILE));
