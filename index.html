@@ -163,6 +163,13 @@ position:fixed;inset:0;z-index:2000;background:#EEF2F7;overflow:auto;direction:r
 .rp-bar{display:grid;grid-template-columns:42% 1fr 30px;gap:8px;align-items:center;font-size:10.5px}
 .rp-bar .tr{height:9px;background:#F1F5F9;border-radius:99px;overflow:hidden;display:block}
 .rp-bar .fl{display:block;height:100%;background:var(--arrive-blue);border-radius:99px}
+.rp-page.fixed{height:297mm;min-height:0;overflow:hidden}
+.rp-body{flex:1;min-height:0;overflow:hidden}
+.rp-blk{margin-bottom:6px}
+.rp-p{margin:0 0 8px;font-size:11.5px;line-height:1.9}
+.rp-scope{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rp-scope div{border:1px solid var(--line);border-inline-start:4px solid var(--arrive-teal);border-radius:8px;padding:8px 10px;background:#F8FAFC;font-size:10.5px}
+.rp-scope b{display:block;color:var(--arrive-blue);margin-bottom:2px}
 body.rp-open{overflow:hidden}
 @page{size:A4;margin:0}
 @media print{
@@ -171,7 +178,7 @@ body.rp-open{overflow:hidden}
   .rp-ov{position:static;overflow:visible;background:#fff}
   .rp-toolbar{display:none}
   .rp-stage{padding:0;gap:0;display:block}
-  .rp-page{box-shadow:none;width:auto;min-height:297mm;break-after:page}
+  .rp-page{box-shadow:none;width:auto;break-after:page}
   .rp-page:last-child{break-after:auto}
 }
 </style>
@@ -547,7 +554,8 @@ setInterval(load, 5 * 60 * 1000);
 (function () {
   const MISSING = 'غير محدد بالمصدر';
   const N = (v) => (v == null || Number.isNaN(v) ? '—' : Number(v).toLocaleString('en-US'));
-  const head = (title) => '<header class="rp-head"><span class="rp-tile"><img src="assets/arrive-logo.png" alt="ARRIVE"></span><span class="rp-sys">إدارة المراجعة التشغيلية</span><span class="rp-ht">تقرير رقابة Miss Pickup</span><span class="rp-hp num">' + esc(ctx.period) + '</span></header><h2>' + esc(title) + '</h2>';
+  const head = () => '<header class="rp-head"><span class="rp-tile"><img src="assets/arrive-logo.png" alt="ARRIVE"></span><span class="rp-sys">إدارة المراجعة التشغيلية</span><span class="rp-ht">تقرير رقابة Miss Pickup</span><span class="rp-hp num">' + esc(ctx.period) + '</span></header>';
+  const sec = (title) => '<h2>' + esc(title) + '</h2>';
   const foot = () => '<footer class="rp-foot"><span>ARRIVE · إدارة المراجعة التشغيلية</span><span class="rp-pn num"></span></footer>';
   const page = (inner, cls) => '<section class="rp-page ' + (cls || '') + '">' + inner + '</section>';
   const table = (cols, rows) => '<table class="rp-table"><thead><tr>' + cols.map((c) => '<th' + (c.num ? ' class="num"' : '') + (c.w ? ' style="width:' + c.w + '"' : '') + '>' + c.t + '</th>').join('') + '</tr></thead><tbody>' + rows + '</tbody></table>';
@@ -584,49 +592,74 @@ setInterval(load, 5 * 60 * 1000);
         top.map((r) => '<tr><td>' + esc(r.label) + '</td><td class="num">' + N(r.n) + '</td><td class="num">' + pctOf(r.n, T) + '</td></tr>').join('') + (rest ? '<tr><td>أخرى</td><td class="num">' + N(rest) + '</td><td class="num">' + pctOf(rest, T) + '</td></tr>' : ''));
     };
     const F = findings(K, Q).sort((a, b) => b.n - a.n);
-    const pages = [];
-
-    pages.push(page('<img class="lg" src="assets/arrive-logo.png" alt="ARRIVE"><div class="main"><div class="kick">إدارة المراجعة التشغيلية</div><h1>تقرير رقابة<br>Miss Pickup</h1><div class="rule"></div>' +
+    const cover = page('<img class="lg" src="assets/arrive-logo.png" alt="ARRIVE"><div class="main"><div class="kick">إدارة المراجعة التشغيلية</div><h1>تقرير رقابة<br>Miss Pickup</h1><div class="rule"></div>' +
       '<dl><div><dt>تاريخ التقرير</dt><dd class="num">' + esc(ctx.period) + '</dd></div><div><dt>إجمالي الحالات</dt><dd class="num">' + N(T) + '</dd></div><div><dt>مصدر البيانات</dt><dd>' + src + '</dd></div><div><dt>تاريخ الإعداد</dt><dd class="num">' + new Date().toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' }) + '</dd></div></dl></div>' +
-      '<div class="cf">جميع الأرقام محسوبة آليًا من سجل الحالات كما هو، دون تعديل أو افتراض.</div>', 'rp-cover'));
-
-    pages.push(page(head('الملخص التنفيذي') +
-      '<div class="rp-kpis">' + kp('إجمالي الحالات', N(T), 'كل الحالات في السجل', '#0837C9') + kp('لم يرد الفرع', N(K.no_reply), ltr(pctOf(K.no_reply, T)) + ' من الإجمالي', '#EF4444') +
+      '<div class="cf">جميع الأرقام محسوبة آليًا من سجل الحالات كما هو، دون تعديل أو افتراض.</div>', 'rp-cover');
+    const B = [];
+    B.push(sec('الهدف من التقرير') +
+      '<p class="rp-p">يهدف هذا التقرير إلى متابعة حالات Miss Pickup المسجلة في سجل الحالات، وبيان موقف الرد والمراجعة والإغلاق لكل حالة، وإبراز الحالات التي لم يرد عليها الفرع أو التي تتطلب إجراءً، وفحص جودة بيانات السجل، وتقديم إجراءات مقترحة للإدارة.</p>' +
+      '<div class="rp-scope"><div><b>النطاق</b><span>كل الحالات في سجل الحالات بتاريخ التقرير <span class="num">' + esc(ctx.period) + '</span> (<span class="num">' + N(T) + '</span> حالة).</span></div>' +
+      '<div><b>حدود التقرير</b><span>لا يقيّم أداء الفروع لأن عمود «الفرع المخطئ» غير مؤكد، ولا يحسب عمر الحالة لغياب تاريخ الإنشاء.</span></div></div>');
+    B.push(sec('الملخص التنفيذي') + '<div class="rp-kpis">' + kp('إجمالي الحالات', N(T), 'كل الحالات في السجل', '#0837C9') + kp('لم يرد الفرع', N(K.no_reply), ltr(pctOf(K.no_reply, T)) + ' من الإجمالي', '#EF4444') +
       kp('بانتظار الأوديت', N(K.awaiting), ltr(pctOf(K.awaiting, T)) + ' من الإجمالي', '#3B82F6') + kp('تتطلب إجراءً', N(K.action), ltr(pctOf(K.action, T)) + ' من الإجمالي', '#F59E0B') +
-      kp('حالات مغلقة', N(K.closed), ltr(pctOf(K.closed, T)) + ' من الإجمالي', '#22C55E') + kp('نسبة الاستجابة', pctOf(K.responded, T), 'حالات ظهر لها رد ÷ الإجمالي', '#00A9C4') + '</div>' +
-      '<h3>مسار المتابعة</h3><div class="rp-fun">' + parts.map((x) => '<i style="width:' + (x.n / T * 100) + '%;background:' + x.color + '"></i>').join('') + '</div>' +
-      '<div class="rp-leg">' + parts.map((x) => '<span><em style="background:' + x.color + '"></em>' + esc(x.label) + ' <b class="num">' + N(x.n) + '</b></span>').join('') + '</div>' +
-      '<div class="rp-two"><div><h3>أعلى الفروع حسب الشيت (غير مؤكد)</h3>' + bars(br, T, 5) + '</div><div><h3>أعلى حالات First Mile</h3>' + bars(fm, T, 5, '#00A9C4') + '</div></div>' +
-      '<h3>أهم النقاط</h3>' + (F.length ? '<ul style="margin:0;padding-inline-start:18px">' + F.slice(0, 4).map((x) => '<li><b>' + esc(x.t) + ':</b> <span>' + x.e + '</span></li>').join('') + '</ul>' : '<p class="rp-note">لا توجد ملاحظات آلية.</p>') +
-      '<div class="rp-warn">تنبيه: عمود «الفرع المخطئ» معروض كما هو في الشيت وغير مؤكد قبل مراجعة الأوديت، ولا يُعتمد لتقييم أداء الفروع.</div>' + foot()));
-
-    pages.push(page(head('توزيع الحالات') + '<div class="rp-two"><div>' + dist(fu, 'حالة المتابعة') + '</div><div>' + dist(ty, 'نوع الحالة') + '</div></div>' +
-      '<div class="rp-two"><div>' + dist(st, 'حالة العميل / الطلب', 8) + '</div><div>' + dist(fm, 'حالة First Mile', 8) + '</div></div>' + foot()));
-
-    pages.push(page(head('الفروع وجودة البيانات') +
-      '<h3>الفرع المخطئ حسب الشيت (غير مؤكد)</h3>' + table([{ t: 'الفرع' }, { t: 'الحالات', num: 1, w: '18mm' }, { t: 'بيك اب', num: 1, w: '18mm' }, { t: 'طلبات العملاء', num: 1, w: '24mm' }, { t: 'النسبة', num: 1, w: '18mm' }],
-        br.slice(0, 15).map((r) => '<tr><td>' + esc(r.label) + '</td><td class="num">' + N(r.n) + '</td><td class="num">' + N(r.pickup) + '</td><td class="num">' + N(r.requests) + '</td><td class="num">' + pctOf(r.n, T) + '</td></tr>').join('')) +
-      (br.length > 15 ? '<p class="rp-note">عُرض أعلى 15 فرعًا من ' + br.length + '.</p>' : '') +
-      '<h3>فحوصات جودة البيانات</h3>' + table([{ t: 'الفحص' }, { t: 'العدد', num: 1, w: '18mm' }, { t: 'النسبة', num: 1, w: '18mm' }, { t: 'الحالة', w: '26mm' }],
-        QCHECKS.map((c) => { const v = Q[c.key]; return '<tr><td>' + esc(c.label) + (c.note && v ? ' — ' + esc(c.note) : '') + '</td><td class="num">' + N(v) + '</td><td class="num">' + pctOf(v, Q.total) + '</td><td><span class="rp-badge ' + (v ? 'rp-b-act' : 'rp-b-ok') + '">' + (v ? 'يحتاج مراجعة' : 'سليم') + '</span></td></tr>'; }).join('')) + foot()));
-
-    pages.push(page(head('الملاحظات والتوصيات') + (F.length ? table([{ t: '#', w: '8mm' }, { t: 'الملاحظة' }, { t: 'الدليل', w: '30mm' }, { t: 'الأثر المحتمل' }, { t: 'الإجراء المقترح' }, { t: 'المسؤول', w: '22mm' }, { t: 'الموعد', w: '18mm' }],
+      kp('حالات مغلقة', N(K.closed), ltr(pctOf(K.closed, T)) + ' من الإجمالي', '#22C55E') + kp('نسبة الاستجابة', pctOf(K.responded, T), 'حالات ظهر لها رد ÷ الإجمالي', '#00A9C4') + '</div>');
+    B.push('<h3>مسار المتابعة</h3><div class="rp-fun">' + parts.map((x) => '<i style="width:' + (x.n / T * 100) + '%;background:' + x.color + '"></i>').join('') + '</div>' +
+      '<div class="rp-leg">' + parts.map((x) => '<span><em style="background:' + x.color + '"></em>' + esc(x.label) + ' <b class="num">' + N(x.n) + '</b></span>').join('') + '</div>');
+    B.push('<div class="rp-two"><div><h3>أعلى الفروع حسب الشيت (غير مؤكد)</h3>' + bars(br, T, 5) + '</div><div><h3>أعلى حالات First Mile</h3>' + bars(fm, T, 5, '#00A9C4') + '</div></div>');
+    B.push('<h3>أهم النقاط</h3>' + (F.length ? '<ul style="margin:0;padding-inline-start:18px">' + F.slice(0, 4).map((x) => '<li><b>' + esc(x.t) + ':</b> <span>' + x.e + '</span></li>').join('') + '</ul>' : '<p class="rp-note">لا توجد ملاحظات آلية.</p>') +
+      '<div class="rp-warn">تنبيه: عمود «الفرع المخطئ» معروض كما هو في الشيت وغير مؤكد قبل مراجعة الأوديت، ولا يُعتمد لتقييم أداء الفروع.</div>');
+    B.push(sec('توزيع الحالات') + '<div class="rp-two"><div>' + dist(fu, 'حالة المتابعة') + '</div><div>' + dist(ty, 'نوع الحالة') + '</div></div>');
+    B.push('<div class="rp-two"><div>' + dist(st, 'حالة العميل / الطلب', 6) + '</div><div>' + dist(fm, 'حالة First Mile', 6) + '</div></div>');
+    B.push(sec('الفروع وجودة البيانات') + '<h3>الفرع المخطئ حسب الشيت (غير مؤكد)</h3>' + table([{ t: 'الفرع' }, { t: 'الحالات', num: 1, w: '18mm' }, { t: 'بيك اب', num: 1, w: '18mm' }, { t: 'طلبات العملاء', num: 1, w: '24mm' }, { t: 'النسبة', num: 1, w: '18mm' }],
+        br.slice(0, 8).map((r) => '<tr><td>' + esc(r.label) + '</td><td class="num">' + N(r.n) + '</td><td class="num">' + N(r.pickup) + '</td><td class="num">' + N(r.requests) + '</td><td class="num">' + pctOf(r.n, T) + '</td></tr>').join('') +
+        (br.length > 8 ? (() => { const o = br.slice(8).reduce((a, r) => ({ n: a.n + r.n, pickup: a.pickup + r.pickup, requests: a.requests + r.requests }), { n: 0, pickup: 0, requests: 0 }); return '<tr><td>أخرى (' + (br.length - 8) + ' فروع)</td><td class="num">' + N(o.n) + '</td><td class="num">' + N(o.pickup) + '</td><td class="num">' + N(o.requests) + '</td><td class="num">' + pctOf(o.n, T) + '</td></tr>'; })() : '')));
+    B.push('<h3>فحوصات جودة البيانات</h3>' + table([{ t: 'الفحص' }, { t: 'العدد', num: 1, w: '18mm' }, { t: 'النسبة', num: 1, w: '18mm' }, { t: 'الحالة', w: '26mm' }],
+        QCHECKS.map((c) => { const v = Q[c.key]; return '<tr><td>' + esc(c.label) + (c.note && v ? ' — ' + esc(c.note) : '') + '</td><td class="num">' + N(v) + '</td><td class="num">' + pctOf(v, Q.total) + '</td><td><span class="rp-badge ' + (v ? 'rp-b-act' : 'rp-b-ok') + '">' + (v ? 'يحتاج مراجعة' : 'سليم') + '</span></td></tr>'; }).join('')));
+    B.push(sec('الملاحظات والتوصيات') + (F.length ? table([{ t: '#', w: '8mm' }, { t: 'الملاحظة' }, { t: 'الدليل', w: '30mm' }, { t: 'الأثر المحتمل' }, { t: 'الإجراء المقترح' }, { t: 'المسؤول', w: '22mm' }, { t: 'الموعد', w: '18mm' }],
         F.map((x, i) => '<tr><td class="num">' + (i + 1) + '</td><td>' + esc(x.t) + '</td><td>' + x.e + '</td><td>' + esc(x.i) + '</td><td>' + esc(x.a) + '</td><td><span class="rp-miss">' + MISSING + '</span></td><td><span class="rp-miss">' + MISSING + '</span></td></tr>').join('')) : '<p>لا توجد ملاحظات آلية.</p>') +
-      '<p class="rp-note">الأدلة محسوبة من السجل. «الأثر المحتمل» تفسير وليس نتيجة مثبتة. الإجراءات مقترحة وليست قرارات معتمدة. المسؤول والموعد غير متوفرين في المصدر ولم يُفترضا.</p>' +
-      '<div class="rp-sign"><div>إعداد</div><div>مراجعة</div><div>اعتماد</div></div><div class="rp-end">نهاية التقرير</div>' + foot()));
-    return pages;
+      '<p class="rp-note">الأدلة محسوبة من السجل. «الأثر المحتمل» تفسير وليس نتيجة مثبتة. الإجراءات مقترحة وليست قرارات معتمدة. المسؤول والموعد غير متوفرين في المصدر ولم يُفترضا.</p>');
+    B.push('<div class="rp-sign"><div>إعداد</div><div>مراجعة</div><div>اعتماد</div></div><div class="rp-end">نهاية التقرير</div>');
+    return { cover, blocks: B };
   }
 
   function open() {
     let ov = document.getElementById('rp-ov');
     if (!ov) { ov = document.createElement('div'); ov.id = 'rp-ov'; ov.className = 'rp-ov'; document.body.appendChild(ov); }
-    let pages;
-    if (dash.data('cases').status !== 'ok' || !dash.data('kpis').data.length || !dash.data('kpis').data[0].total) pages = [page('<h2>لا توجد بيانات</h2><p>لا توجد حالات متاحة لإعداد التقرير.</p>')];
-    else { try { pages = build(); } catch (e) { console.error(e); pages = [page('<h2>تعذّر إعداد التقرير</h2><p>أعد المحاولة بعد تحديث اللوحة.</p>')]; } }
-    ov.innerHTML = '<div class="rp-toolbar"><b>معاينة التقرير</b><div class="rp-tb"><button type="button" id="rp-print">طباعة / حفظ PDF</button><button type="button" id="rp-close">إغلاق</button></div></div><div class="rp-stage">' + pages.join('') + '</div>';
+    ov.innerHTML = '<div class="rp-toolbar"><b>معاينة التقرير</b><div class="rp-tb"><button type="button" id="rp-print">طباعة / حفظ PDF</button><button type="button" id="rp-close">إغلاق</button></div></div><div class="rp-stage" id="rp-stage"></div>';
+    ov.hidden = false; document.body.classList.add('rp-open');
+    const stage = document.getElementById('rp-stage');
+    const k = dash.data('kpis');
+    if (dash.data('cases').status !== 'ok' || !k.data.length || !k.data[0].total) stage.innerHTML = page('<h2>لا توجد بيانات</h2><p>لا توجد حالات متاحة لإعداد التقرير.</p>');
+    else {
+      try {
+        const r = build(); ctx.r = r;
+        stage.insertAdjacentHTML('beforeend', r.cover);
+        const mk = () => { const pg = document.createElement('section'); pg.className = 'rp-page fixed'; pg.innerHTML = head() + '<div class="rp-body"></div>' + foot(); stage.appendChild(pg); return pg.querySelector('.rp-body'); };
+        let body = mk();
+        const fits = () => body.scrollHeight <= body.clientHeight + 1;
+        // يضع الكتلة في الصفحة الحالية، ويقسّم الجدول على مستوى الصفوف عند الحاجة (مع تكرار رأس الجدول)
+        const place = (el) => {
+          body.appendChild(el);
+          if (fits()) return;
+          const tbl = el.querySelectorAll('table.rp-table').length === 1 ? el.querySelector('table.rp-table') : null, tb = tbl && tbl.tBodies[0];
+          if (tb && tb.rows.length > 3) {
+            const moved = [];
+            while (tb.rows.length > 2 && !fits()) moved.unshift(tb.removeChild(tb.rows[tb.rows.length - 1]));
+            if (fits() && moved.length) {
+              const rest = document.createElement('div'); rest.className = 'rp-blk';
+              const t2 = tbl.cloneNode(true); t2.tBodies[0].replaceChildren(...moved); rest.appendChild(t2);
+              while (tbl.nextSibling) rest.appendChild(tbl.nextSibling);
+              body = mk(); place(rest); return;
+            }
+            moved.forEach((r) => tb.appendChild(r));
+          }
+          if (body.children.length > 1) { body.removeChild(el); body = mk(); body.appendChild(el); }
+        };
+        r.blocks.forEach((html) => { const el = document.createElement('div'); el.className = 'rp-blk'; el.innerHTML = html; place(el); });
+      } catch (e) { console.error(e); stage.innerHTML = page('<h2>تعذّر إعداد التقرير</h2><p>أعد المحاولة بعد تحديث اللوحة.</p>'); }
+    }
     const sheets = ov.querySelectorAll('.rp-page');
     sheets.forEach((p, i) => { const pn = p.querySelector('.rp-pn'); if (pn) pn.textContent = 'صفحة ' + (i + 1) + ' من ' + sheets.length; });
-    ov.hidden = false; document.body.classList.add('rp-open');
     document.getElementById('rp-close').onclick = close;
     document.getElementById('rp-print').onclick = () => window.print();
   }
