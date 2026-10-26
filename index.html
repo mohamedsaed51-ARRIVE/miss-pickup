@@ -329,7 +329,7 @@ const d3 = {
 
 /* ---- Data loading: Apps Script API أولًا، ثم الملف المحلي ---- */
 const API_KEY = 'arrive_misspickup_api_url', THEME_KEY = 'arrive_misspickup_theme';
-const DEFAULT_API_URL = ''; // ضع رابط Apps Script هنا أو من الإعدادات
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbwC8bW9eojQcO4Vvu7O3kOXLF5YaV_K3D6Jus8B_uDK_oepCkS6Wiqr5dV2cZMQBt7-/exec'; // Apps Script Web app (live)
 const LOCAL_FILE = 'miss_pickup_cases.json';
 const $ = (id) => document.getElementById(id);
 const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
