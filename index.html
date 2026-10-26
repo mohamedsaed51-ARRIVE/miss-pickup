@@ -130,7 +130,7 @@ position:fixed;inset:0;z-index:2000;background:#EEF2F7;overflow:auto;direction:r
 .rp-warn{margin:8px 0;border:1px solid var(--act);border-inline-start:4px solid var(--act);border-radius:8px;padding:7px 10px;font-size:10.5px;background:#FEF3C7;color:#B45309}
 .rp-foot{margin-top:auto;padding-top:6px;display:flex;justify-content:space-between;border-top:1px solid var(--line);font-size:9.5px;color:var(--g5)}
 .rp-cover{background:var(--arrive-blue);color:#fff;padding:20mm 18mm}
-.rp-cover img.lg{height:46px;display:block}
+.rp-cover img.lg{height:46px;width:auto;align-self:flex-start;display:block}
 .rp-cover .main{margin-top:46mm}
 .rp-cover .kick{display:inline-block;background:var(--arrive-teal);color:var(--arrive-navy);font-weight:700;padding:3px 14px;border-radius:6px;font-size:13px}
 .rp-cover h1{margin:16px 0 14px;font-size:38px;line-height:1.35;font-weight:800;color:#fff}
@@ -159,6 +159,10 @@ position:fixed;inset:0;z-index:2000;background:#EEF2F7;overflow:auto;direction:r
 .rp-sign{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
 .rp-sign div{border-top:1px solid var(--g5);padding-top:6px;font-size:10.5px;color:var(--g5);text-align:center}
 .rp-end{text-align:center;margin-top:18px;font-weight:700;color:var(--arrive-blue)}
+.rp-bars{display:grid;gap:7px}
+.rp-bar{display:grid;grid-template-columns:42% 1fr 30px;gap:8px;align-items:center;font-size:10.5px}
+.rp-bar .tr{height:9px;background:#F1F5F9;border-radius:99px;overflow:hidden;display:block}
+.rp-bar .fl{display:block;height:100%;background:var(--arrive-blue);border-radius:99px}
 body.rp-open{overflow:hidden}
 @page{size:A4;margin:0}
 @media print{
@@ -548,10 +552,12 @@ setInterval(load, 5 * 60 * 1000);
   const page = (inner, cls) => '<section class="rp-page ' + (cls || '') + '">' + inner + '</section>';
   const table = (cols, rows) => '<table class="rp-table"><thead><tr>' + cols.map((c) => '<th' + (c.num ? ' class="num"' : '') + (c.w ? ' style="width:' + c.w + '"' : '') + '>' + c.t + '</th>').join('') + '</tr></thead><tbody>' + rows + '</tbody></table>';
   let ctx = {};
+  const ltr = (t) => '<bdi dir="ltr">' + t + '</bdi>';
+  const bars = (rows, T, lim, color) => '<div class="rp-bars">' + rows.slice(0, lim).map((r) => '<div class="rp-bar"><span>' + esc(r.label) + '</span><span class="tr"><span class="fl" style="width:' + Math.max(3, r.n / rows[0].n * 100) + '%;' + (color ? 'background:' + color : '') + '"></span></span><b class="num">' + N(r.n) + '</b></div>').join('') + '</div>';
 
   function findings(K, Q) {
     const T = K.total, f = [];
-    const add = (t, n, i, a) => { if (n > 0) f.push({ n, t, e: N(n) + ' من ' + N(T) + ' (' + pctOf(n, T) + ')', i, a }); };
+    const add = (t, n, i, a) => { if (n > 0) f.push({ n, t, e: ltr(N(n)) + ' من ' + ltr(N(T)) + ' (' + ltr(pctOf(n, T)) + ')', i, a }); };
     add('حالات Miss Pickup لم يرد عليها الفرع', K.no_reply, 'حالات مفتوحة دون رد موثّق من الفرع، مما يؤخر التحقق والإغلاق', 'متابعة الفروع المسؤولة للرد في الشيت ضمن مهلة تُعتمد، وتصعيد الحالات غير المردود عليها');
     add('حالات تتطلب استكمال رد أو إجراءً تصحيحيًا', K.action, 'الرد الحالي غير كافٍ لإغلاق الحالة', 'متابعة استكمال الرد أو تنفيذ الإجراء التصحيحي وتوثيقه');
     add('حالات بانتظار الأوديت أو تحت المراجعة', K.awaiting, 'تراكم حالات لدى الأوديت يؤخر الإغلاق', 'تحديد مهلة لمراجعة الأوديت وجدولة المراجعة');
@@ -570,7 +576,7 @@ setInterval(load, 5 * 60 * 1000);
     ctx.period = dates.length ? dates.join(' — ') : MISSING;
     const conn = document.getElementById('mp-conn').dataset.state;
     const src = conn === 'live' ? 'سجل الحالات (Google Sheet) — اتصال مباشر' : 'نسخة محلية من السجل (miss_pickup_cases.json)';
-    const kp = (l, v, s, c) => '<div class="rp-kpi" style="--c:' + c + '"><div class="l">' + l + '</div><div class="v num">' + v + '</div><div class="s">' + s + '</div></div>';
+    const kp = (l, v, s0, c) => '<div class="rp-kpi" style="--c:' + c + '"><div class="l">' + l + '</div><div class="v num">' + v + '</div><div class="s">' + s0 + '</div></div>';
     const parts = funnelParts(fu, T);
     const dist = (rows, h, lim) => {
       const top = rows.slice(0, lim || 8), rest = rows.slice(lim || 8).reduce((a, r) => a + r.n, 0);
@@ -585,11 +591,12 @@ setInterval(load, 5 * 60 * 1000);
       '<div class="cf">جميع الأرقام محسوبة آليًا من سجل الحالات كما هو، دون تعديل أو افتراض.</div>', 'rp-cover'));
 
     pages.push(page(head('الملخص التنفيذي') +
-      '<div class="rp-kpis">' + kp('إجمالي الحالات', N(T), 'كل الحالات في السجل', '#0837C9') + kp('لم يرد الفرع', N(K.no_reply), pctOf(K.no_reply, T) + ' من الإجمالي', '#EF4444') +
-      kp('بانتظار الأوديت', N(K.awaiting), pctOf(K.awaiting, T) + ' من الإجمالي', '#3B82F6') + kp('تتطلب إجراءً', N(K.action), pctOf(K.action, T) + ' من الإجمالي', '#F59E0B') +
-      kp('حالات مغلقة', N(K.closed), pctOf(K.closed, T) + ' من الإجمالي', '#22C55E') + kp('نسبة الاستجابة', pctOf(K.responded, T), 'حالات ظهر لها رد ÷ الإجمالي', '#00A9C4') + '</div>' +
+      '<div class="rp-kpis">' + kp('إجمالي الحالات', N(T), 'كل الحالات في السجل', '#0837C9') + kp('لم يرد الفرع', N(K.no_reply), ltr(pctOf(K.no_reply, T)) + ' من الإجمالي', '#EF4444') +
+      kp('بانتظار الأوديت', N(K.awaiting), ltr(pctOf(K.awaiting, T)) + ' من الإجمالي', '#3B82F6') + kp('تتطلب إجراءً', N(K.action), ltr(pctOf(K.action, T)) + ' من الإجمالي', '#F59E0B') +
+      kp('حالات مغلقة', N(K.closed), ltr(pctOf(K.closed, T)) + ' من الإجمالي', '#22C55E') + kp('نسبة الاستجابة', pctOf(K.responded, T), 'حالات ظهر لها رد ÷ الإجمالي', '#00A9C4') + '</div>' +
       '<h3>مسار المتابعة</h3><div class="rp-fun">' + parts.map((x) => '<i style="width:' + (x.n / T * 100) + '%;background:' + x.color + '"></i>').join('') + '</div>' +
       '<div class="rp-leg">' + parts.map((x) => '<span><em style="background:' + x.color + '"></em>' + esc(x.label) + ' <b class="num">' + N(x.n) + '</b></span>').join('') + '</div>' +
+      '<div class="rp-two"><div><h3>أعلى الفروع حسب الشيت (غير مؤكد)</h3>' + bars(br, T, 5) + '</div><div><h3>أعلى حالات First Mile</h3>' + bars(fm, T, 5, '#00A9C4') + '</div></div>' +
       '<h3>أهم النقاط</h3>' + (F.length ? '<ul style="margin:0;padding-inline-start:18px">' + F.slice(0, 4).map((x) => '<li><b>' + esc(x.t) + ':</b> <span>' + x.e + '</span></li>').join('') + '</ul>' : '<p class="rp-note">لا توجد ملاحظات آلية.</p>') +
       '<div class="rp-warn">تنبيه: عمود «الفرع المخطئ» معروض كما هو في الشيت وغير مؤكد قبل مراجعة الأوديت، ولا يُعتمد لتقييم أداء الفروع.</div>' + foot()));
 
